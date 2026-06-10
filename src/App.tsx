@@ -131,6 +131,14 @@ function LoginHero() {
           <button className="primary" disabled={connecting} onClick={() => void login()}>
             {connecting ? "Waiting for Google…" : "Connect Google Calendar"}
           </button>
+          {connecting && (
+            <p className="connect-hint">
+              Finish signing in in the browser tab that just opened.
+              If Google says <em>“Access blocked”</em> or <em>“app has not been
+              verified”</em>, add your e-mail under <strong>OAuth consent screen
+              → Test users</strong> in Google Cloud Console and try again.
+            </p>
+          )}
           <button className="ghost link" onClick={() => setEditKeys(true)}>
             Use different API keys
           </button>

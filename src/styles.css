@@ -489,6 +489,14 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 }
 .login-hero h1 { font-size: 46px; }
 .login-hero p { font-weight: 700; color: var(--ink-soft); max-width: 400px; text-align: center; }
+.login-hero .connect-hint {
+  font-size: 13px;
+  background: var(--vanilla-2);
+  border: 2.5px dashed var(--mango);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  animation: pop 0.3s var(--spring);
+}
 .login-hero > button.primary { font-size: 18px; padding: 12px 30px; }
 
 /* one-time API key setup card */
