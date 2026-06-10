@@ -93,7 +93,13 @@ export const useStore = create<State>((set, get) => ({
     if (get().connecting) return;
     set({ connecting: true });
     try {
-      await signIn();
+      // Don't leave the button stuck if the user abandons the browser flow
+      await Promise.race([
+        signIn(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Sign-in timed out — try again.")), 180_000)
+        ),
+      ]);
       set({ signedIn: true });
       get().toast("ok", "Signed in! Syncing…");
       await get().refresh();

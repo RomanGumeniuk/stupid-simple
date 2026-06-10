@@ -132,7 +132,6 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
                       setDrag({ ...drag, toMin: minutesFromPointer(ev, ev.currentTarget) });
                     }
                   }}
-                  onMouseUp={finishDrag}
                 >
                   {Array.from({ length: 24 }, (_, h) => <div className="hline" key={h} />)}
 
