@@ -2,6 +2,7 @@
 // Stupid Simple — app state + sync engine
 // Local change -> straight to Google (optimistic UI with rollback).
 // Remote changes -> polled every 60 s + refreshed after each mutation.
+// Tasks and settings are local-only (localStorage), not synced.
 // ===================================================================
 import { create } from "zustand";
 import {
@@ -17,13 +18,54 @@ import {
   hasCreds,
   saveCreds,
 } from "./google";
+import { fmtDateInput, setHour12 } from "./notify";
 
 export type ViewMode = "month" | "week" | "day";
+export type Accent = "bubblegum" | "mango" | "mint" | "berry" | "grape";
 
 export interface Toast {
   id: number;
   kind: "ok" | "err";
   text: string;
+}
+
+export interface Todo {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface Settings {
+  defaultView: ViewMode;
+  hour12: boolean;
+  dark: boolean;
+  accent: Accent;
+}
+
+const LS_SETTINGS = "ss.settings";
+const LS_TODOS = "ss.todos";
+
+const DEFAULT_SETTINGS: Settings = {
+  defaultView: "week",
+  hour12: false,
+  dark: false,
+  accent: "bubblegum",
+};
+
+function loadSettings(): Settings {
+  try {
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(LS_SETTINGS) ?? "{}") };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+function loadTodos(): Record<string, Todo[]> {
+  try {
+    return JSON.parse(localStorage.getItem(LS_TODOS) ?? "{}");
+  } catch {
+    return {};
+  }
 }
 
 interface State {
@@ -37,10 +79,13 @@ interface State {
   lastSync: Date | null;
   toasts: Toast[];
   party: number; // confetti burst id (0 = none)
+  todos: Record<string, Todo[]>; // keyed by YYYY-MM-DD
+  settings: Settings;
   modal:
     | { kind: "none" }
     | { kind: "event"; event?: GEvent; presetStart?: Date; presetEnd?: Date; allDay?: boolean }
-    | { kind: "birthday" };
+    | { kind: "birthday" }
+    | { kind: "settings" };
 
   setCreds: (clientId: string, clientSecret: string) => void;
   login: () => Promise<void>;
@@ -54,6 +99,11 @@ interface State {
   updateEvent: (id: string, patch: Partial<GEvent>) => Promise<void>;
   removeEvent: (id: string) => Promise<void>;
   addBirthday: (name: string, month: number, day: number) => Promise<void>;
+  addTodo: (day: Date, text: string) => void;
+  toggleTodo: (key: string, id: string) => void;
+  editTodo: (key: string, id: string, text: string) => void;
+  removeTodo: (key: string, id: string) => void;
+  updateSettings: (patch: Partial<Settings>) => void;
   openModal: (m: State["modal"]) => void;
   closeModal: () => void;
   toast: (kind: Toast["kind"], text: string) => void;
@@ -70,17 +120,22 @@ function fetchRange(cursor: Date): [Date, Date] {
   return [min, max];
 }
 
+const initialSettings = loadSettings();
+setHour12(initialSettings.hour12);
+
 export const useStore = create<State>((set, get) => ({
   signedIn: isSignedIn(),
   credsReady: hasCreds(),
   connecting: false,
-  view: "week",
+  view: initialSettings.defaultView,
   cursor: new Date(),
   events: [],
   syncing: false,
   lastSync: null,
   toasts: [],
   party: 0,
+  todos: loadTodos(),
+  settings: initialSettings,
   modal: { kind: "none" },
 
   setCreds: (clientId, clientSecret) => {
@@ -193,6 +248,45 @@ export const useStore = create<State>((set, get) => ({
     } catch (e) {
       get().toast("err", e instanceof Error ? e.message : "Couldn't add the birthday");
     }
+  },
+
+  // --- daily tasks (local-only) ---
+  addTodo: (day, text) => {
+    const key = fmtDateInput(day);
+    const todo: Todo = { id: crypto.randomUUID(), text, done: false };
+    const todos = { ...get().todos, [key]: [...(get().todos[key] ?? []), todo] };
+    localStorage.setItem(LS_TODOS, JSON.stringify(todos));
+    set({ todos });
+  },
+
+  toggleTodo: (key, id) => {
+    const list = (get().todos[key] ?? []).map((t) => (t.id === id ? { ...t, done: !t.done } : t));
+    const todos = { ...get().todos, [key]: list };
+    localStorage.setItem(LS_TODOS, JSON.stringify(todos));
+    set({ todos });
+  },
+
+  editTodo: (key, id, text) => {
+    const list = (get().todos[key] ?? []).map((t) => (t.id === id ? { ...t, text } : t));
+    const todos = { ...get().todos, [key]: list };
+    localStorage.setItem(LS_TODOS, JSON.stringify(todos));
+    set({ todos });
+  },
+
+  removeTodo: (key, id) => {
+    const list = (get().todos[key] ?? []).filter((t) => t.id !== id);
+    const todos = { ...get().todos };
+    if (list.length) todos[key] = list;
+    else delete todos[key];
+    localStorage.setItem(LS_TODOS, JSON.stringify(todos));
+    set({ todos });
+  },
+
+  updateSettings: (patch) => {
+    const settings = { ...get().settings, ...patch };
+    localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+    setHour12(settings.hour12);
+    set({ settings });
   },
 
   openModal: (modal) => set({ modal }),

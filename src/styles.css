@@ -21,6 +21,32 @@
   --font-display: "Baloo 2", system-ui, sans-serif;
   --font-body: "Nunito", system-ui, sans-serif;
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --primary: var(--bubblegum);
+  --today-bg: #fff1d6;
+  --select-bg: #e3ecff;
+  --grid-1: #e8ddc8;
+  --grid-2: #f0e7d4;
+}
+
+/* accent color (Settings) */
+:root[data-accent="mango"] { --primary: var(--mango); }
+:root[data-accent="mint"] { --primary: var(--mint); }
+:root[data-accent="berry"] { --primary: var(--berry); }
+:root[data-accent="grape"] { --primary: var(--grape); }
+
+/* dark mode (Settings) */
+:root[data-theme="dark"] {
+  --vanilla: #221e2b;
+  --vanilla-2: #2b2637;
+  --card: #332d42;
+  --ink: #f2eef9;
+  --ink-soft: #b3aac4;
+  --shadow: 0 6px 0 rgba(0, 0, 0, 0.4);
+  --shadow-press: 0 2px 0 rgba(0, 0, 0, 0.4);
+  --today-bg: #4a3b22;
+  --select-bg: #2e3b5e;
+  --grid-1: #46405a;
+  --grid-2: #3a3449;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,7 +81,7 @@ button:hover { transform: translateY(-2px) rotate(-0.5deg) scale(1.02); }
 button:active { transform: translateY(3px) scale(0.97); box-shadow: var(--shadow-press); }
 button:focus-visible { outline: 3px dashed var(--berry); outline-offset: 3px; }
 button:disabled { opacity: 0.55; cursor: default; transform: none; }
-button.primary { background: var(--bubblegum); color: #fff; }
+button.primary { background: var(--primary); color: #fff; }
 button.mint { background: var(--mint); color: #fff; }
 button.mango { background: var(--mango); }
 button.ghost { border-color: transparent; box-shadow: none; background: transparent; }
@@ -107,7 +133,7 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 }
 .logo .bean {
   width: 34px; height: 34px;
-  background: var(--bubblegum);
+  background: var(--primary);
   border: 3px solid var(--ink);
   border-radius: 46% 54% 55% 45% / 55% 45% 55% 45%;
   animation: wobble 3.4s ease-in-out infinite;
@@ -252,12 +278,24 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 }
 .mcell:hover { transform: translateY(-2px) rotate(-0.3deg); box-shadow: var(--shadow-press); }
 .mcell.faded { opacity: 0.45; }
-.mcell.today { background: #fff1d6; border-color: var(--mango); border-width: 3px; }
+.mcell.today { background: var(--today-bg); border-color: var(--mango); border-width: 3px; }
 .mcell.today .dnum { color: #b06a00; }
-.mcell.selecting { background: #e3ecff; border-color: var(--berry); }
+.mcell.selecting { background: var(--select-bg); border-color: var(--berry); }
+.mcell { position: relative; }
 .mcell .dnum {
   font-family: var(--font-display); font-weight: 800; font-size: 14px;
+  cursor: pointer; align-self: flex-start; border-radius: 8px; padding: 0 4px;
+  transition: transform 0.12s var(--spring), background 0.12s;
 }
+.mcell .dnum:hover { background: var(--mango); transform: scale(1.2); }
+.todo-badge {
+  position: absolute; top: 6px; right: 6px;
+  font-family: var(--font-display); font-weight: 700; font-size: 10px;
+  background: var(--mango); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: var(--r-pill);
+  padding: 0 6px; line-height: 1.5;
+}
+.todo-badge.all-done { background: var(--mint); color: #fff; }
 .mcell .more { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
 
 /* ---------- WEEK / DAY VIEW ---------- */
@@ -280,8 +318,8 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
   text-align: right; padding-right: 8px; transform: translateY(-7px);
 }
 .days { display: grid; position: relative; }
-.daycol { position: relative; border-left: 2px dashed #e8ddc8; }
-.daycol .hline { height: 52px; border-bottom: 2px dashed #f0e7d4; }
+.daycol { position: relative; border-left: 2px dashed var(--grid-1); }
+.daycol .hline { height: 52px; border-bottom: 2px dashed var(--grid-2); }
 .tevent {
   position: absolute; left: 3px; right: 5px;
   display: flex; flex-direction: column;
@@ -353,6 +391,46 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 .empty {
   text-align: center; color: var(--ink-soft); font-weight: 700; font-size: 13.5px; padding: 8px 0;
 }
+
+/* ---------- DAILY TASKS ---------- */
+.settings-btn { margin-left: auto; font-size: 17px; padding: 4px 8px; }
+.task-date {
+  margin-left: auto; font-size: 12px; font-weight: 700; color: var(--ink-soft);
+  background: var(--vanilla-2); border-radius: var(--r-pill); padding: 2px 10px;
+}
+.todo-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+  border-bottom: 2px dashed var(--vanilla-2);
+  animation: jelly-in 0.25s var(--spring) backwards;
+}
+.todo-item:last-of-type { border-bottom: none; }
+.todo-check {
+  width: 26px; height: 26px; min-width: 26px;
+  border: 2.5px solid var(--ink); border-radius: 50%;
+  background: var(--card); color: #fff;
+  font-size: 14px; line-height: 1; padding: 0;
+  box-shadow: var(--shadow-press);
+  display: flex; align-items: center; justify-content: center;
+}
+.todo-check:hover { transform: scale(1.15) rotate(-6deg); }
+.todo-item.done .todo-check { background: var(--mint); }
+.todo-text {
+  flex: 1; min-width: 0;
+  border: none; box-shadow: none; background: transparent;
+  font-weight: 700; font-size: 14px; padding: 4px 2px;
+  border-radius: 8px;
+}
+.todo-text:hover, .todo-text:focus { background: var(--vanilla-2); }
+.todo-item.done .todo-text { text-decoration: line-through; color: var(--ink-soft); }
+.todo-del {
+  border: none; box-shadow: none; background: transparent;
+  color: var(--ink-soft); font-size: 18px; padding: 0 6px; line-height: 1;
+}
+.todo-del:hover { color: var(--bubblegum); transform: scale(1.25); }
+.todo-add { display: flex; gap: 6px; margin-top: 8px; }
+.todo-add input { padding: 7px 12px; font-size: 13.5px; border-width: 2.5px; }
+.todo-add button { padding: 4px 13px; font-size: 17px; }
 
 /* ---------- MODAL ---------- */
 .overlay {
@@ -463,7 +541,7 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 
 .login-hero .big-bean {
   width: 120px; height: 120px;
-  background: var(--bubblegum);
+  background: var(--primary);
   border: 4px solid var(--ink);
   border-radius: 46% 54% 55% 45% / 55% 45% 55% 45%;
   position: relative;

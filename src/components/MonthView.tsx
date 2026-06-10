@@ -3,7 +3,7 @@ import { useStore } from "../lib/store";
 import { GEvent, isBirthday } from "../lib/google";
 import {
   DOW, DAY_MS, startOfDay, sameDay, touchesDay, mondayOf,
-  eventStart, isAllDay, fmtTime,
+  eventStart, isAllDay, fmtTime, fmtDateInput,
 } from "../lib/notify";
 
 function jellyClass(e: GEvent): string {
@@ -16,7 +16,7 @@ function jellyClass(e: GEvent): string {
 }
 
 export default function MonthView() {
-  const { cursor, events, openModal } = useStore();
+  const { cursor, events, openModal, todos, setCursor, setView } = useStore();
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dragTo, setDragTo] = useState<number | null>(null);
 
@@ -72,7 +72,28 @@ export default function MonthView() {
                 }}
                 onMouseEnter={() => { if (dragFrom !== null) setDragTo(t); }}
               >
-                <span className="dnum">{day.getDate()}</span>
+                <span
+                  className="dnum"
+                  title="Open day view"
+                  onMouseDown={(ev) => ev.stopPropagation()}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    setCursor(day);
+                    setView("day");
+                  }}
+                >
+                  {day.getDate()}
+                </span>
+                {(() => {
+                  const tds = todos[fmtDateInput(day)];
+                  if (!tds?.length) return null;
+                  const done = tds.filter((t) => t.done).length;
+                  return (
+                    <span className={`todo-badge ${done === tds.length ? "all-done" : ""}`}>
+                      ✓ {done}/{tds.length}
+                    </span>
+                  );
+                })()}
                 {shown.map((e, i) => (
                   <div
                     key={e.id}

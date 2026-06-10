@@ -263,10 +263,14 @@ export async function createBirthday(name: string, month: number, day: number): 
     endDate.getDate()
   ).padStart(2, "0")}`;
 
+  // The API requires a timeZone on recurring events — without it the
+  // insert fails with 400 and the birthday silently never appears.
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   return createEvent({
     summary: `🎂 Birthday: ${name}`,
-    start: { date: startStr },
-    end: { date: endStr },
+    start: { date: startStr, timeZone: tz },
+    end: { date: endStr, timeZone: tz },
     recurrence: ["RRULE:FREQ=YEARLY"],
     colorId: "4",
     reminders: {

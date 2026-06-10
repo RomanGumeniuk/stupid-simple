@@ -5,7 +5,16 @@ import { initNotifications, checkNotifications, MONTHS, mondayOf, DAY_MS } from 
 import Sidebar from "./components/Sidebar";
 import MonthView from "./components/MonthView";
 import WeekView from "./components/WeekView";
-import { EventModal, BirthdayModal } from "./components/Modals";
+import { EventModal, BirthdayModal, SettingsModal } from "./components/Modals";
+
+/** Applies dark mode + accent color to the document root. */
+function useTheme() {
+  const settings = useStore((s) => s.settings);
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.dark ? "dark" : "light";
+    document.documentElement.dataset.accent = settings.accent;
+  }, [settings.dark, settings.accent]);
+}
 
 const SETUP_GUIDE_URL =
   "https://github.com/RomanGumeniuk/stupid-simple#google-setup-one-time-5-minutes";
@@ -157,6 +166,7 @@ function LoginHero() {
 export default function App() {
   const { signedIn, view, setView, cursor, shift, goToday, refresh, events, modal, syncing } =
     useStore();
+  useTheme();
 
   useEffect(() => {
     if (!signedIn) return;
@@ -209,6 +219,7 @@ export default function App() {
         />
       )}
       {modal.kind === "birthday" && <BirthdayModal />}
+      {modal.kind === "settings" && <SettingsModal />}
 
       <Confetti />
       <Toasts />

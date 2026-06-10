@@ -38,8 +38,17 @@ export function touchesDay(e: GEvent, day: Date): boolean {
   const en = eventEnd(e).getTime();
   return s < d1 && en > d0;
 }
+let hour12 = false;
+/** Set by the store from settings — affects all displayed times. */
+export function setHour12(v: boolean): void {
+  hour12 = v;
+}
 export function fmtTime(d: Date): string {
-  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(hour12 ? "en-US" : "en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12,
+  });
 }
 export function fmtDateInput(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(

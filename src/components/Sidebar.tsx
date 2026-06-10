@@ -1,7 +1,68 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "../lib/store";
 import { isBirthday, birthdayName } from "../lib/google";
-import { eventStart, startOfDay, DAY_MS } from "../lib/notify";
+import { eventStart, startOfDay, fmtDateInput, DAY_MS } from "../lib/notify";
+
+function TasksCard() {
+  const { cursor, todos, addTodo, toggleTodo, editTodo, removeTodo } = useStore();
+  const [draft, setDraft] = useState("");
+
+  const key = fmtDateInput(cursor);
+  const dayTodos = todos[key] ?? [];
+  const isToday = key === fmtDateInput(new Date());
+  const dayLabel = isToday
+    ? "today"
+    : cursor.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+
+  function add() {
+    const text = draft.trim();
+    if (!text) return;
+    addTodo(cursor, text);
+    setDraft("");
+  }
+
+  return (
+    <div className="card">
+      <h3>
+        ✅ Tasks <span className="task-date">{dayLabel}</span>
+      </h3>
+      {dayTodos.length === 0 && (
+        <div className="empty">Nothing planned — add a task below!</div>
+      )}
+      {dayTodos.map((t) => (
+        <div className={`todo-item ${t.done ? "done" : ""}`} key={t.id}>
+          <button
+            className="todo-check"
+            aria-label={t.done ? "Mark as not done" : "Mark as done"}
+            onClick={() => toggleTodo(key, t.id)}
+          >
+            {t.done ? "✓" : ""}
+          </button>
+          <input
+            className="todo-text"
+            value={t.text}
+            onChange={(e) => editTodo(key, t.id, e.target.value)}
+            onBlur={(e) => { if (!e.target.value.trim()) removeTodo(key, t.id); }}
+          />
+          <button className="todo-del" aria-label="Delete task" onClick={() => removeTodo(key, t.id)}>
+            ×
+          </button>
+        </div>
+      ))}
+      <form
+        className="todo-add"
+        onSubmit={(e) => { e.preventDefault(); add(); }}
+      >
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={isToday ? "Add a task for today…" : "Add a task for this day…"}
+        />
+        <button type="submit" className="mint" disabled={!draft.trim()}>+</button>
+      </form>
+    </div>
+  );
+}
 
 export default function Sidebar() {
   const { events, openModal, syncing, lastSync, refresh, logout } = useStore();
@@ -24,6 +85,14 @@ export default function Sidebar() {
       <div className="logo">
         <span className="bean" aria-hidden />
         Stupid Simple
+        <button
+          className="ghost icon settings-btn"
+          aria-label="Settings"
+          title="Settings"
+          onClick={() => openModal({ kind: "settings" })}
+        >
+          ⚙️
+        </button>
       </div>
 
       <button className="primary" onClick={() => openModal({ kind: "event" })}>
@@ -32,6 +101,8 @@ export default function Sidebar() {
       <button className="mango" onClick={() => openModal({ kind: "birthday" })}>
         🎂 Add birthday
       </button>
+
+      <TasksCard />
 
       <div className="card">
         <h3>🎉 Upcoming birthdays</h3>

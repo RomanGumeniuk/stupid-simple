@@ -32,10 +32,19 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
     return () => clearInterval(t);
   }, []);
 
-  // scroll to 7:30 on open
+  const days = useMemo(() => {
+    if (singleDay) return [startOfDay(cursor)];
+    const mon = mondayOf(cursor);
+    return Array.from({ length: 7 }, (_, i) => new Date(mon.getTime() + i * DAY_MS));
+  }, [cursor, singleDay]);
+
+  // scroll to the current hour when today is visible, otherwise to 7:30
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 7.5 * HOUR_PX });
-  }, [singleDay]);
+    const now = new Date();
+    const showsToday = days.some((d) => sameDay(d, now));
+    const hours = showsToday ? Math.max(0, now.getHours() - 2.5) : 7.5;
+    scrollRef.current?.scrollTo({ top: hours * HOUR_PX, behavior: "smooth" });
+  }, [days, singleDay]);
 
   // finish the drag even when the mouse is released outside the column
   useEffect(() => {
@@ -45,12 +54,6 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
     return () => window.removeEventListener("mouseup", up);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drag]);
-
-  const days = useMemo(() => {
-    if (singleDay) return [startOfDay(cursor)];
-    const mon = mondayOf(cursor);
-    return Array.from({ length: 7 }, (_, i) => new Date(mon.getTime() + i * DAY_MS));
-  }, [cursor, singleDay]);
 
   const cols = days.length;
   const today = new Date();

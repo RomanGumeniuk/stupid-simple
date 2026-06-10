@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStore } from "../lib/store";
+import { useStore, Accent, ViewMode } from "../lib/store";
 import { GEvent } from "../lib/google";
 import { eventStart, eventEnd, isAllDay, fmtDateInput, fmtTimeInput, MONTHS } from "../lib/notify";
 
@@ -193,6 +193,74 @@ export function BirthdayModal() {
             onClick={async () => { await addBirthday(name.trim(), month, day); closeModal(); }}>
             Add birthday
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ACCENTS: { id: Accent; css: string; name: string }[] = [
+  { id: "bubblegum", css: "var(--bubblegum)", name: "Bubblegum" },
+  { id: "mango", css: "var(--mango)", name: "Mango" },
+  { id: "mint", css: "var(--mint)", name: "Mint" },
+  { id: "berry", css: "var(--berry)", name: "Berry" },
+  { id: "grape", css: "var(--grape)", name: "Grape" },
+];
+
+export function SettingsModal() {
+  const { closeModal, settings, updateSettings } = useStore();
+
+  return (
+    <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+      <div className="modal">
+        <h2>Settings ⚙️</h2>
+
+        <div className="row">
+          <div>
+            <label htmlFor="st-view">Default view</label>
+            <select id="st-view" value={settings.defaultView}
+              onChange={(e) => updateSettings({ defaultView: e.target.value as ViewMode })}>
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="st-clock">Time format</label>
+            <select id="st-clock" value={settings.hour12 ? "12" : "24"}
+              onChange={(e) => updateSettings({ hour12: e.target.value === "12" })}>
+              <option value="24">24-hour</option>
+              <option value="12">12-hour (AM/PM)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="row"><div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={settings.dark}
+              onChange={(e) => updateSettings({ dark: e.target.checked })} />
+            🌙 Dark mode
+          </label>
+        </div></div>
+
+        <div className="row"><div>
+          <label>Accent color</label>
+          <div className="color-dots">
+            {ACCENTS.map((a) => (
+              <button key={a.id} type="button" aria-label={a.name}
+                className={`cdot ${settings.accent === a.id ? "sel" : ""}`}
+                style={{ background: a.css }}
+                onClick={() => updateSettings({ accent: a.id })} />
+            ))}
+          </div>
+        </div></div>
+
+        <p style={{ fontWeight: 700, fontSize: 13, color: "var(--ink-soft)" }}>
+          Settings and daily tasks are stored on this PC only.
+        </p>
+
+        <div className="actions">
+          <button className="primary" onClick={closeModal}>Done</button>
         </div>
       </div>
     </div>
