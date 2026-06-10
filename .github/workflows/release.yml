@@ -1,0 +1,54 @@
+# Builds the Windows installer and attaches it to a GitHub Release.
+# Trigger: push a tag like v1.0.0, or run manually from the Actions tab.
+#
+# No secrets required — users paste their own Google API keys in the app
+# on first launch. (Optionally you can set VITE_GOOGLE_CLIENT_ID and
+# VITE_GOOGLE_CLIENT_SECRET as repository secrets to bake keys in.)
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.VITE_GOOGLE_CLIENT_SECRET }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: "Stupid Simple v__VERSION__"
+          releaseBody: |
+            🍬 **Stupid Simple** — a candy calendar that syncs with Google Calendar.
+
+            **Install:** download the `.msi` (or the `-setup.exe`) below, run it, done.
+            On first launch paste your Google API keys — the README has a 5-minute guide.
+          releaseDraft: false
+          prerelease: false
