@@ -48,14 +48,16 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
 1. Go to **[Releases](../../releases)** and download the latest `.msi`
    (or `-setup.exe`) installer.
 2. Run it. That's the whole install.
-3. On first launch the app asks for your Google API keys — a one-time,
-   ~5 minute setup. Follow the guide below.
+3. Launch **Stupid Simple**, click **Connect Google Calendar**, sign in in
+   the browser — done. Releases from v1.4.1 on ship with a built-in OAuth
+   client, so there's nothing to configure.
 
-> Why do I need my own keys? Stupid Simple talks directly to *your* Google
-> account with no server in between, so you bring your own (free) OAuth
-> client. Your data never touches anyone else's machine.
+> While the app awaits Google's verification, the browser may show
+> "Google hasn't verified this app" — click **Advanced → Go to Stupid
+> Simple (unsafe)** to continue. Your data goes straight from your machine
+> to Google; there's no server in between.
 
-## Google setup (one-time, ~5 minutes)
+## Google setup — only if you build from source with your own keys
 
 1. Open <https://console.cloud.google.com> and create a new project
    (call it anything, e.g. "Stupid Simple").
