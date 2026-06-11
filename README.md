@@ -40,6 +40,7 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
 | `T` | jump to today |
 | `D` / `W` / `M` | day / week / month view |
 | `N` | new event |
+| `+` / `-` (or `Ctrl`+scroll) | zoom the hour grid in week/day view |
 | `Esc` | close dialog |
 
 ## Install (the easy way)

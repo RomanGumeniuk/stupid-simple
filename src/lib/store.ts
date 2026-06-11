@@ -40,7 +40,12 @@ export interface Settings {
   hour12: boolean;
   dark: boolean;
   accent: Accent;
+  /** Height of one hour in the week/day grid, px. */
+  zoom: number;
 }
+
+export const ZOOM_MIN = 28;
+export const ZOOM_MAX = 104;
 
 const LS_SETTINGS = "ss.settings";
 const LS_TODOS = "ss.todos";
@@ -50,6 +55,7 @@ const DEFAULT_SETTINGS: Settings = {
   hour12: false,
   dark: false,
   accent: "bubblegum",
+  zoom: 52,
 };
 
 function loadSettings(): Settings {
@@ -105,6 +111,7 @@ interface State {
   editTodo: (key: string, id: string, text: string) => void;
   removeTodo: (key: string, id: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  setZoom: (px: number) => void;
   openModal: (m: State["modal"]) => void;
   closeModal: () => void;
   toast: (kind: Toast["kind"], text: string) => void;
@@ -288,6 +295,11 @@ export const useStore = create<State>((set, get) => ({
     localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
     setHour12(settings.hour12);
     set({ settings });
+  },
+
+  setZoom: (px) => {
+    const zoom = Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, px)));
+    if (zoom !== get().settings.zoom) get().updateSettings({ zoom });
   },
 
   openModal: (modal) => set({ modal }),

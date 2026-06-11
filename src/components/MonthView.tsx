@@ -108,7 +108,18 @@ export default function MonthView() {
                   </div>
                 ))}
                 {dayEvents.length > 3 && (
-                  <span className="more">+{dayEvents.length - 3} more</span>
+                  <span
+                    className="more"
+                    title="Show this day"
+                    onMouseDown={(ev) => ev.stopPropagation()}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setCursor(day);
+                      setView("day");
+                    }}
+                  >
+                    +{dayEvents.length - 3} more
+                  </span>
                 )}
               </div>
             );

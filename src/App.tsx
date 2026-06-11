@@ -164,7 +164,7 @@ function LoginHero() {
 }
 
 export default function App() {
-  const { signedIn, view, setView, cursor, shift, goToday, refresh, events, modal, syncing } =
+  const { signedIn, view, setView, cursor, shift, goToday, refresh, events, modal, syncing, settings, setZoom } =
     useStore();
   useTheme();
 
@@ -201,6 +201,8 @@ export default function App() {
         case "w": case "W": s.setView("week"); break;
         case "m": case "M": s.setView("month"); break;
         case "n": case "N": s.openModal({ kind: "event" }); break;
+        case "+": case "=": s.setZoom(s.settings.zoom + 8); break;
+        case "-": case "_": s.setZoom(s.settings.zoom - 8); break;
       }
     };
     window.addEventListener("keydown", onKey);
@@ -218,6 +220,12 @@ export default function App() {
           <button className="icon" aria-label="Forward" onClick={() => shift(1)}>→</button>
           <button className="mint" onClick={goToday}>Today</button>
           <h2>{title(cursor, view)}</h2>
+          {view !== "month" && (
+            <div className="zoom-ctrl" role="group" aria-label="Grid zoom" title="Zoom the hour grid (Ctrl+scroll or +/-)">
+              <button className="icon" aria-label="Zoom out" onClick={() => setZoom(settings.zoom - 8)}>−</button>
+              <button className="icon" aria-label="Zoom in" onClick={() => setZoom(settings.zoom + 8)}>+</button>
+            </div>
+          )}
           <div className="view-switch" role="tablist">
             {([["day", "Day"], ["week", "Week"], ["month", "Month"]] as const).map(([v, l]) => (
               <button key={v} role="tab" aria-selected={view === v}

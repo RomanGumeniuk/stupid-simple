@@ -6,7 +6,6 @@ import {
   eventStart, eventEnd, isAllDay, touchesDay, fmtTime, plainDesc, eventTooltip,
 } from "../lib/notify";
 
-const HOUR_PX = 52;
 const SNAP_MIN = 15;
 
 function jellyClass(e: GEvent): string {
@@ -20,9 +19,63 @@ function jellyClass(e: GEvent): string {
 
 interface Drag { day: number; fromMin: number; toMin: number; }
 
+interface Placed {
+  e: GEvent;
+  sMin: number;
+  eMin: number;
+  col: number;
+  cols: number;
+}
+
+/**
+ * Assigns overlapping events to side-by-side columns (the classic
+ * calendar layout): events are clustered by transitive overlap, each
+ * event takes the first free column, and every event in a cluster is
+ * as wide as 1/columns of the day.
+ */
+function layoutDay(events: GEvent[], day: Date): Placed[] {
+  const items: Placed[] = events
+    .map((e) => {
+      const s = eventStart(e);
+      const en = eventEnd(e);
+      const sMin = sameDay(s, day) ? s.getHours() * 60 + s.getMinutes() : 0;
+      let eMin = sameDay(en, day) ? en.getHours() * 60 + en.getMinutes() : 24 * 60;
+      eMin = Math.max(eMin, sMin + 20); // minimum footprint so tiny events still get a column
+      return { e, sMin, eMin, col: 0, cols: 1 };
+    })
+    .sort((a, b) => a.sMin - b.sMin || b.eMin - a.eMin);
+
+  let cluster: Placed[] = [];
+  let colEnds: number[] = [];
+  let clusterEnd = -1;
+
+  const flush = () => {
+    for (const it of cluster) it.cols = colEnds.length;
+    cluster = [];
+    colEnds = [];
+  };
+
+  for (const it of items) {
+    if (cluster.length && it.sMin >= clusterEnd) flush();
+    let col = colEnds.findIndex((end) => end <= it.sMin);
+    if (col === -1) {
+      col = colEnds.length;
+      colEnds.push(0);
+    }
+    colEnds[col] = it.eMin;
+    it.col = col;
+    cluster.push(it);
+    clusterEnd = Math.max(clusterEnd, it.eMin);
+  }
+  flush();
+  return items;
+}
+
 export default function WeekView({ singleDay = false }: { singleDay?: boolean }) {
-  const { cursor, events, openModal } = useStore();
+  const { cursor, events, openModal, setCursor, setView, settings } = useStore();
+  const HP = settings.zoom; // px per hour
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevHp = useRef(HP);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [, tick] = useState(0);
 
@@ -31,6 +84,15 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
     const t = setInterval(() => tick((x) => x + 1), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  // finish the drag even when the mouse is released outside the column
+  useEffect(() => {
+    if (!drag) return;
+    const up = () => finishDrag();
+    window.addEventListener("mouseup", up);
+    return () => window.removeEventListener("mouseup", up);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag]);
 
   const days = useMemo(() => {
     if (singleDay) return [startOfDay(cursor)];
@@ -43,17 +105,33 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
     const now = new Date();
     const showsToday = days.some((d) => sameDay(d, now));
     const hours = showsToday ? Math.max(0, now.getHours() - 2.5) : 7.5;
-    scrollRef.current?.scrollTo({ top: hours * HOUR_PX, behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: hours * HP, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, singleDay]);
 
-  // finish the drag even when the mouse is released outside the column
+  // keep the visual center anchored when zooming
   useEffect(() => {
-    if (!drag) return;
-    const up = () => finishDrag();
-    window.addEventListener("mouseup", up);
-    return () => window.removeEventListener("mouseup", up);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag]);
+    const el = scrollRef.current;
+    const old = prevHp.current;
+    if (!el || old === HP) return;
+    const center = el.scrollTop + el.clientHeight / 2;
+    el.scrollTop = center * (HP / old) - el.clientHeight / 2;
+    prevHp.current = HP;
+  }, [HP]);
+
+  // Ctrl+scroll zooms the grid (native listener — must be non-passive)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const z = useStore.getState().settings.zoom;
+      useStore.getState().setZoom(z + (e.deltaY < 0 ? 6 : -6));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const cols = days.length;
   const today = new Date();
@@ -61,7 +139,7 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
 
   function minutesFromPointer(ev: React.MouseEvent, col: HTMLElement): number {
     const rect = col.getBoundingClientRect();
-    const raw = ((ev.clientY - rect.top) / HOUR_PX) * 60;
+    const raw = ((ev.clientY - rect.top) / HP) * 60;
     return Math.max(0, Math.min(24 * 60, Math.round(raw / SNAP_MIN) * SNAP_MIN));
   }
 
@@ -78,8 +156,13 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
     });
   }
 
+  function openDay(d: Date) {
+    setCursor(d);
+    setView("day");
+  }
+
   return (
-    <div className="weekwrap">
+    <div className="weekwrap" style={{ "--hour-px": `${HP}px` } as React.CSSProperties}>
       <div className="whead" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
         {days.map((d) => (
           <div key={d.getTime()} className={`wd ${sameDay(d, today) ? "today" : ""}`}>
@@ -90,12 +173,12 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
 
       {/* all-day events strip */}
       <div className="allday-row" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-        {days.map((d) => (
-          <div key={d.getTime()} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {events
-              .filter((e) => isAllDay(e) && touchesDay(e, d))
-              .slice(0, 2)
-              .map((e, i) => (
+        {days.map((d) => {
+          const all = events.filter((e) => isAllDay(e) && touchesDay(e, d));
+          const shown = singleDay ? all : all.slice(0, 2);
+          return (
+            <div key={d.getTime()} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {shown.map((e, i) => (
                 <div
                   key={e.id}
                   className={jellyClass(e)}
@@ -106,8 +189,14 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
                   {e.summary ?? "(no title)"}
                 </div>
               ))}
-          </div>
-        ))}
+              {all.length > shown.length && (
+                <button className="more-chip" onClick={() => openDay(d)}>
+                  +{all.length - shown.length} more
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="wgrid-scroll" ref={scrollRef}>
@@ -121,6 +210,7 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
             {days.map((day) => {
               const dayT = day.getTime();
               const timed = events.filter((e) => !isAllDay(e) && touchesDay(e, day));
+              const placed = layoutDay(timed, day);
               return (
                 <div
                   className="daycol"
@@ -138,25 +228,38 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
                 >
                   {Array.from({ length: 24 }, (_, h) => <div className="hline" key={h} />)}
 
-                  {timed.map((e, i) => {
+                  {placed.map(({ e, sMin, eMin, col, cols: n }, i) => {
                     const s = eventStart(e);
                     const en = eventEnd(e);
-                    const sMin = sameDay(s, day) ? s.getHours() * 60 + s.getMinutes() : 0;
-                    const eMin = sameDay(en, day) ? en.getHours() * 60 + en.getMinutes() : 24 * 60;
-                    const top = (sMin / 60) * HOUR_PX;
-                    const height = Math.max(22, ((eMin - sMin) / 60) * HOUR_PX - 3);
+                    const top = (sMin / 60) * HP;
+                    const height = Math.max(20, ((eMin - sMin) / 60) * HP - 3);
+                    const compact = height < 38;
                     return (
                       <div
                         key={e.id}
-                        className={`${jellyClass(e)} tevent`}
-                        style={{ top, height, "--i": i } as React.CSSProperties}
+                        className={`${jellyClass(e)} tevent ${compact ? "compact" : ""}`}
+                        style={{
+                          top,
+                          height,
+                          left: `calc(${(col / n) * 100}% + 3px)`,
+                          width: `calc(${100 / n}% - 8px)`,
+                          "--i": i,
+                        } as React.CSSProperties}
                         onClick={(ev) => { ev.stopPropagation(); openModal({ kind: "details", event: e }); }}
                         title={eventTooltip(e)}
                       >
-                        <span className="time">{fmtTime(s)}–{fmtTime(en)}</span>
-                        {e.summary ?? "(no title)"}
-                        {height > 60 && plainDesc(e) && (
-                          <span className="tdesc">{plainDesc(e)}</span>
+                        {compact ? (
+                          <span className="compact-line">
+                            <span className="time">{fmtTime(s)}</span> {e.summary ?? "(no title)"}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="time">{fmtTime(s)}–{fmtTime(en)}</span>
+                            {e.summary ?? "(no title)"}
+                            {height > 64 && plainDesc(e) && (
+                              <span className="tdesc">{plainDesc(e)}</span>
+                            )}
+                          </>
                         )}
                       </div>
                     );
@@ -166,14 +269,14 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
                     <div
                       className="drag-ghost"
                       style={{
-                        top: (Math.min(drag.fromMin, drag.toMin) / 60) * HOUR_PX,
-                        height: (Math.abs(drag.toMin - drag.fromMin) / 60) * HOUR_PX || 8,
+                        top: (Math.min(drag.fromMin, drag.toMin) / 60) * HP,
+                        height: (Math.abs(drag.toMin - drag.fromMin) / 60) * HP || 8,
                       }}
                     />
                   )}
 
                   {sameDay(day, today) && (
-                    <div className="now-line" style={{ top: (nowMin / 60) * HOUR_PX }} />
+                    <div className="now-line" style={{ top: (nowMin / 60) * HP }} />
                   )}
                 </div>
               );
