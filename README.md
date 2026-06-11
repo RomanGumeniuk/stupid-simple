@@ -27,6 +27,10 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
 - 📅 Day / week / month views, a "now" line, candy colors, event editing and
   deleting, optimistic saves with rollback on error; click a day number in
   month view to jump to that day
+- 🔍 **Event details at a glance** — descriptions show up right on the
+  calendar (inline in month view, under the title in week/day view, full
+  text on hover); click any event for a details card with the complete
+  description, then edit or delete from there
 
 ### Keyboard shortcuts
 

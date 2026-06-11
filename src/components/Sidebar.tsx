@@ -115,8 +115,8 @@ export default function Sidebar() {
             <div
               className="bday-item"
               key={e.id}
-              title="Edit birthday"
-              onClick={() => openModal({ kind: "event", event: e })}
+              title="Show birthday"
+              onClick={() => openModal({ kind: "details", event: e })}
             >
               <span>🎂</span>
               <span>{birthdayName(e)}</span>

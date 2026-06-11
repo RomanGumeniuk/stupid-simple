@@ -5,7 +5,7 @@ import { initNotifications, checkNotifications, MONTHS, mondayOf, DAY_MS } from 
 import Sidebar from "./components/Sidebar";
 import MonthView from "./components/MonthView";
 import WeekView from "./components/WeekView";
-import { EventModal, BirthdayModal, SettingsModal } from "./components/Modals";
+import { EventModal, BirthdayModal, SettingsModal, DetailsModal } from "./components/Modals";
 
 /** Applies dark mode + accent color to the document root. */
 function useTheme() {
@@ -244,6 +244,7 @@ export default function App() {
           presetAllDay={modal.allDay}
         />
       )}
+      {modal.kind === "details" && <DetailsModal event={modal.event} />}
       {modal.kind === "birthday" && <BirthdayModal />}
       {modal.kind === "settings" && <SettingsModal />}
 

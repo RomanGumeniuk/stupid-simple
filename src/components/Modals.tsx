@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useStore, Accent, ViewMode } from "../lib/store";
-import { GEvent } from "../lib/google";
-import { eventStart, eventEnd, isAllDay, fmtDateInput, fmtTimeInput, MONTHS } from "../lib/notify";
+import { GEvent, isBirthday } from "../lib/google";
+import {
+  eventStart, eventEnd, isAllDay, fmtDateInput, fmtTimeInput, fmtTime,
+  sameDay, plainDesc, MONTHS, DAY_MS,
+} from "../lib/notify";
 
 const COLORS: { id: string; css: string; name: string }[] = [
   { id: "9", css: "var(--berry)", name: "Berry" },
@@ -129,7 +132,8 @@ export function EventModal({
 
         <div className="row"><div>
           <label htmlFor="ev-desc">Description (optional)</label>
-          <input id="ev-desc" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Details…" />
+          <textarea id="ev-desc" rows={3} value={desc}
+            onChange={(e) => setDesc(e.target.value)} placeholder="Details…" />
         </div></div>
 
         <div className="actions">
@@ -192,6 +196,76 @@ export function BirthdayModal() {
           <button className="primary" disabled={!name.trim()}
             onClick={async () => { await addBirthday(name.trim(), month, day); closeModal(); }}>
             Add birthday
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Google colorId → candy color (same mapping the views use)
+const COLOR_CSS: Record<string, string> = {
+  "4": "var(--bubblegum)", "5": "var(--mango)", "6": "var(--mango)",
+  "10": "var(--mint)", "2": "var(--mint)", "3": "var(--grape)", "1": "var(--grape)",
+  "9": "var(--berry)",
+};
+
+export function DetailsModal({ event }: { event: GEvent }) {
+  const { closeModal, openModal, removeEvent } = useStore();
+
+  const allDay = isAllDay(event);
+  const s = eventStart(event);
+  const en = eventEnd(event);
+  const birthday = isBirthday(event);
+  const desc = plainDesc(event);
+
+  const longDay = (d: Date) =>
+    d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  const shortDay = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+  let when: string;
+  if (allDay) {
+    // exclusive → inclusive end, clamped for malformed zero-length events
+    const endIncl = new Date(Math.max(en.getTime() - DAY_MS, s.getTime()));
+    when = sameDay(s, endIncl)
+      ? `${longDay(s)} · all day`
+      : `${shortDay(s)} – ${shortDay(endIncl)} · all day`;
+  } else {
+    when = sameDay(s, en)
+      ? `${longDay(s)} · ${fmtTime(s)}–${fmtTime(en)}`
+      : `${shortDay(s)} ${fmtTime(s)} – ${shortDay(en)} ${fmtTime(en)}`;
+  }
+
+  const color = birthday ? "var(--bubblegum)" : COLOR_CSS[event.colorId ?? ""] ?? "var(--berry)";
+
+  return (
+    <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+      <div className="modal">
+        <div className="detail-head">
+          <span className="detail-dot" style={{ background: color }} aria-hidden />
+          <h2>{event.summary ?? "(no title)"}</h2>
+        </div>
+
+        <div className="detail-when">🕐 {when}</div>
+        {birthday && <div className="detail-when">🎂 Repeats yearly · reminder a week before</div>}
+
+        {desc ? (
+          <div className="detail-desc">{desc}</div>
+        ) : (
+          <div className="detail-desc no-desc">No description — hit Edit to add one.</div>
+        )}
+
+        <div className="actions">
+          <button
+            className="danger"
+            style={{ marginRight: "auto" }}
+            onClick={async () => { if (event.id) await removeEvent(event.id); closeModal(); }}
+          >
+            Delete
+          </button>
+          <button className="ghost" onClick={closeModal}>Close</button>
+          <button className="primary" onClick={() => openModal({ kind: "event", event })}>
+            ✏️ Edit
           </button>
         </div>
       </div>

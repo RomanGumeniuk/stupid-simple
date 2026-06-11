@@ -30,6 +30,27 @@ export function eventEnd(e: GEvent): Date {
 export function isAllDay(e: GEvent): boolean {
   return !!e.start.date;
 }
+/**
+ * Event description as plain text — Google descriptions can contain HTML
+ * (links, <br>), which we don't render in the candy UI.
+ */
+export function plainDesc(e: GEvent): string {
+  const d = e.description ?? "";
+  return d
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+/** Tooltip text: title plus description if present. */
+export function eventTooltip(e: GEvent): string {
+  const desc = plainDesc(e);
+  return desc ? `${e.summary ?? "(no title)"}\n${desc}` : e.summary ?? "(no title)";
+}
 /** Whether the event overlaps the given day. */
 export function touchesDay(e: GEvent, day: Date): boolean {
   const d0 = startOfDay(day).getTime();

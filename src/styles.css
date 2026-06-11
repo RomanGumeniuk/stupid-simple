@@ -101,10 +101,11 @@ input, select, textarea {
   width: 100%;
   transition: transform 0.12s ease;
 }
-input:focus-visible, select:focus-visible {
+input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 3px dashed var(--berry);
   outline-offset: 2px;
 }
+textarea { resize: vertical; min-height: 72px; }
 label { font-family: var(--font-display); font-weight: 700; font-size: 14px; display: block; margin-bottom: 6px; }
 
 /* ---------- LAYOUT ---------- */
@@ -249,6 +250,13 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 .jelly.birthday { background: var(--bubblegum); }
 .jelly.birthday::after { content: " 🎈"; }
 .jelly .time { opacity: 0.85; font-weight: 600; margin-right: 4px; font-size: 11px; }
+.jelly .jdesc { opacity: 0.75; font-weight: 600; font-size: 11.5px; }
+.tevent .tdesc {
+  font-size: 10.5px; font-weight: 600; opacity: 0.85;
+  white-space: normal; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  margin-top: 2px; line-height: 1.25;
+}
 
 /* ---------- MONTH VIEW ---------- */
 .month {
@@ -455,6 +463,30 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 .modal h2 { font-size: 22px; margin-bottom: 16px; }
+
+/* event details (view mode) */
+.detail-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.detail-head h2 { margin-bottom: 0; line-height: 1.2; overflow-wrap: anywhere; }
+.detail-dot {
+  width: 18px; height: 18px; min-width: 18px; margin-top: 5px;
+  border-radius: 50%; border: 2.5px solid var(--ink);
+  box-shadow: var(--shadow-press);
+}
+.detail-when {
+  font-weight: 700; font-size: 14px; color: var(--ink-soft);
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+.detail-desc {
+  background: var(--vanilla-2);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-weight: 600; font-size: 14px; line-height: 1.45;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  max-height: 240px; overflow-y: auto;
+  user-select: text;
+}
+.detail-desc.no-desc { color: var(--ink-soft); font-style: italic; user-select: none; }
 .modal .row { display: flex; gap: 10px; margin-bottom: 12px; }
 .modal .row > div { flex: 1; }
 .modal .actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }

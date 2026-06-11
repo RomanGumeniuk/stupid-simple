@@ -3,7 +3,7 @@ import { useStore } from "../lib/store";
 import { GEvent, isBirthday } from "../lib/google";
 import {
   DOW, DAY_MS, startOfDay, sameDay, mondayOf,
-  eventStart, eventEnd, isAllDay, touchesDay, fmtTime,
+  eventStart, eventEnd, isAllDay, touchesDay, fmtTime, plainDesc, eventTooltip,
 } from "../lib/notify";
 
 const HOUR_PX = 52;
@@ -100,8 +100,8 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
                   key={e.id}
                   className={jellyClass(e)}
                   style={{ "--i": i } as React.CSSProperties}
-                  onClick={() => openModal({ kind: "event", event: e })}
-                  title={e.summary}
+                  onClick={() => openModal({ kind: "details", event: e })}
+                  title={eventTooltip(e)}
                 >
                   {e.summary ?? "(no title)"}
                 </div>
@@ -150,11 +150,14 @@ export default function WeekView({ singleDay = false }: { singleDay?: boolean })
                         key={e.id}
                         className={`${jellyClass(e)} tevent`}
                         style={{ top, height, "--i": i } as React.CSSProperties}
-                        onClick={(ev) => { ev.stopPropagation(); openModal({ kind: "event", event: e }); }}
-                        title={e.summary}
+                        onClick={(ev) => { ev.stopPropagation(); openModal({ kind: "details", event: e }); }}
+                        title={eventTooltip(e)}
                       >
                         <span className="time">{fmtTime(s)}–{fmtTime(en)}</span>
                         {e.summary ?? "(no title)"}
+                        {height > 60 && plainDesc(e) && (
+                          <span className="tdesc">{plainDesc(e)}</span>
+                        )}
                       </div>
                     );
                   })}

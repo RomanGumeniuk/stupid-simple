@@ -3,7 +3,7 @@ import { useStore } from "../lib/store";
 import { GEvent, isBirthday } from "../lib/google";
 import {
   DOW, DAY_MS, startOfDay, sameDay, touchesDay, mondayOf,
-  eventStart, isAllDay, fmtTime, fmtDateInput,
+  eventStart, isAllDay, fmtTime, fmtDateInput, plainDesc, eventTooltip,
 } from "../lib/notify";
 
 function jellyClass(e: GEvent): string {
@@ -99,11 +99,12 @@ export default function MonthView() {
                     key={e.id}
                     className={jellyClass(e)}
                     style={{ "--i": i } as React.CSSProperties}
-                    onClick={(ev) => { ev.stopPropagation(); openModal({ kind: "event", event: e }); }}
-                    title={e.summary}
+                    onClick={(ev) => { ev.stopPropagation(); openModal({ kind: "details", event: e }); }}
+                    title={eventTooltip(e)}
                   >
                     {!isAllDay(e) && <span className="time">{fmtTime(eventStart(e))}</span>}
                     {e.summary ?? "(no title)"}
+                    {plainDesc(e) && <span className="jdesc"> · {plainDesc(e)}</span>}
                   </div>
                 ))}
                 {dayEvents.length > 3 && (

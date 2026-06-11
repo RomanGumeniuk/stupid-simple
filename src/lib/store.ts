@@ -84,6 +84,7 @@ interface State {
   modal:
     | { kind: "none" }
     | { kind: "event"; event?: GEvent; presetStart?: Date; presetEnd?: Date; allDay?: boolean }
+    | { kind: "details"; event: GEvent }
     | { kind: "birthday" }
     | { kind: "settings" };
 
@@ -309,3 +310,8 @@ export const useStore = create<State>((set, get) => ({
 
 // Poll remote changes every 60 s
 setInterval(() => void useStore.getState().refresh(), 60_000);
+
+// Expose the store in dev so the UI can be driven from the console/tests
+if (import.meta.env.DEV) {
+  (window as unknown as { __store?: typeof useStore }).__store = useStore;
+}
