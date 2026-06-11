@@ -19,8 +19,24 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
   time; drag across days in month view to create multi-day events
 - 🔔 **Desktop notifications** — 10 minutes before and at event start, plus a
   separate one when someone has a birthday today
+- ✅ **Daily tasks** — a checklist per day in the sidebar: add, check off,
+  edit inline, delete; the month view shows a done/total badge on each day
+  (stored locally, not synced)
+- ⚙️ **Settings** — default view, 12/24-hour clock, **dark mode**, and five
+  accent colors
 - 📅 Day / week / month views, a "now" line, candy colors, event editing and
-  deleting, optimistic saves with rollback on error
+  deleting, optimistic saves with rollback on error; click a day number in
+  month view to jump to that day
+
+### Keyboard shortcuts
+
+| Key | Action |
+| --- | --- |
+| `←` / `→` | previous / next day, week or month |
+| `T` | jump to today |
+| `D` / `W` / `M` | day / week / month view |
+| `N` | new event |
+| `Esc` | close dialog |
 
 ## Install (the easy way)
 

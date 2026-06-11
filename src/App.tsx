@@ -181,6 +181,32 @@ export default function App() {
     checkNotifications(events);
   }, [events]);
 
+  // keyboard shortcuts: ←/→ navigate, T today, D/W/M views, N new event, Esc close
+  useEffect(() => {
+    if (!signedIn) return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName ?? "";
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      const s = useStore.getState();
+      if (e.key === "Escape") {
+        if (s.modal.kind !== "none") s.closeModal();
+        return;
+      }
+      if (typing || s.modal.kind !== "none" || e.ctrlKey || e.metaKey || e.altKey) return;
+      switch (e.key) {
+        case "ArrowLeft": s.shift(-1); break;
+        case "ArrowRight": s.shift(1); break;
+        case "t": case "T": s.goToday(); break;
+        case "d": case "D": s.setView("day"); break;
+        case "w": case "W": s.setView("week"); break;
+        case "m": case "M": s.setView("month"); break;
+        case "n": case "N": s.openModal({ kind: "event" }); break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [signedIn]);
+
   if (!signedIn) return <LoginHero />;
 
   return (

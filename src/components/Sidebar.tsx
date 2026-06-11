@@ -112,7 +112,12 @@ export default function Sidebar() {
         {birthdays.map(({ e, days }) => {
           const when = days === 0 ? "TODAY!" : days === 1 ? "tomorrow" : `in ${days} days`;
           return (
-            <div className="bday-item" key={e.id}>
+            <div
+              className="bday-item"
+              key={e.id}
+              title="Edit birthday"
+              onClick={() => openModal({ kind: "event", event: e })}
+            >
               <span>🎂</span>
               <span>{birthdayName(e)}</span>
               {days <= 7 ? <span className="soon">{when}</span> : <span className="when">{when}</span>}
