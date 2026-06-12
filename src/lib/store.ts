@@ -21,7 +21,7 @@ import {
 import { fmtDateInput, setHour12 } from "./notify";
 import { aiParse } from "./ai";
 
-export type ViewMode = "month" | "week" | "day";
+export type ViewMode = "month" | "week" | "day" | "tasks";
 export type Accent = "bubblegum" | "mango" | "mint" | "berry" | "grape";
 
 export interface Toast {
@@ -48,7 +48,12 @@ export interface Settings {
   /** Gemini API key for AI quick-add (free at aistudio.google.com/apikey). */
   aiKey: string;
   aiModel: string;
+  /** Sidebar width in px (drag the right edge). */
+  sidebarWidth: number;
 }
+
+export const SIDEBAR_MIN = 230;
+export const SIDEBAR_MAX = 480;
 
 export const ZOOM_MIN = 28;
 export const ZOOM_MAX = 104;
@@ -68,6 +73,7 @@ const DEFAULT_SETTINGS: Settings = {
   collapsed: {},
   aiKey: "",
   aiModel: "gemini-2.5-flash",
+  sidebarWidth: 280,
 };
 
 function loadSettings(): Settings {
@@ -129,6 +135,8 @@ interface State {
   aiBusy: boolean;
   updateSettings: (patch: Partial<Settings>) => void;
   setZoom: (px: number) => void;
+  /** pass persist=false during a drag, true on the final mouseup */
+  setSidebarWidth: (px: number, persist?: boolean) => void;
   openModal: (m: State["modal"]) => void;
   closeModal: () => void;
   toast: (kind: Toast["kind"], text: string) => void;
@@ -394,6 +402,16 @@ export const useStore = create<State>((set, get) => ({
   setZoom: (px) => {
     const zoom = Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, px)));
     if (zoom !== get().settings.zoom) get().updateSettings({ zoom });
+  },
+
+  setSidebarWidth: (px, persist = true) => {
+    const sidebarWidth = Math.round(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, px)));
+    if (persist) {
+      get().updateSettings({ sidebarWidth });
+    } else if (sidebarWidth !== get().settings.sidebarWidth) {
+      // live update during drag without hammering localStorage
+      set({ settings: { ...get().settings, sidebarWidth } });
+    }
   },
 
   openModal: (modal) => set({ modal }),

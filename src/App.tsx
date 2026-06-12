@@ -5,6 +5,7 @@ import { initNotifications, checkNotifications, MONTHS, mondayOf, DAY_MS } from 
 import Sidebar from "./components/Sidebar";
 import MonthView from "./components/MonthView";
 import WeekView from "./components/WeekView";
+import TasksView from "./components/TasksView";
 import { EventModal, BirthdayModal, SettingsModal, DetailsModal } from "./components/Modals";
 
 /** Applies dark mode + accent color to the document root. */
@@ -20,6 +21,7 @@ const SETUP_GUIDE_URL =
   "https://github.com/RomanGumeniuk/stupid-simple#google-setup-one-time-5-minutes";
 
 function title(cursor: Date, view: string): string {
+  if (view === "tasks") return "Things to do";
   if (view === "month") return `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
   if (view === "day") {
     return cursor.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
@@ -200,6 +202,7 @@ export default function App() {
         case "d": case "D": s.setView("day"); break;
         case "w": case "W": s.setView("week"); break;
         case "m": case "M": s.setView("month"); break;
+        case "b": case "B": s.setView("tasks"); break;
         case "n": case "N": s.openModal({ kind: "event" }); break;
         case "+": case "=": s.setZoom(s.settings.zoom + 8); break;
         case "-": case "_": s.setZoom(s.settings.zoom - 8); break;
@@ -216,18 +219,22 @@ export default function App() {
       <Sidebar />
       <main className="main">
         <div className="topbar">
-          <button className="icon" aria-label="Back" onClick={() => shift(-1)}>←</button>
-          <button className="icon" aria-label="Forward" onClick={() => shift(1)}>→</button>
-          <button className="mint" onClick={goToday}>Today</button>
+          {view !== "tasks" && (
+            <>
+              <button className="icon" aria-label="Back" onClick={() => shift(-1)}>←</button>
+              <button className="icon" aria-label="Forward" onClick={() => shift(1)}>→</button>
+              <button className="mint" onClick={goToday}>Today</button>
+            </>
+          )}
           <h2>{title(cursor, view)}</h2>
-          {view !== "month" && (
+          {(view === "day" || view === "week") && (
             <div className="zoom-ctrl" role="group" aria-label="Grid zoom" title="Zoom the hour grid (Ctrl+scroll or +/-)">
               <button className="icon" aria-label="Zoom out" onClick={() => setZoom(settings.zoom - 8)}>−</button>
               <button className="icon" aria-label="Zoom in" onClick={() => setZoom(settings.zoom + 8)}>+</button>
             </div>
           )}
           <div className="view-switch" role="tablist">
-            {([["day", "Day"], ["week", "Week"], ["month", "Month"]] as const).map(([v, l]) => (
+            {([["day", "Day"], ["week", "Week"], ["month", "Month"], ["tasks", "✅ Tasks"]] as const).map(([v, l]) => (
               <button key={v} role="tab" aria-selected={view === v}
                 className={view === v ? "active" : ""} onClick={() => setView(v)}>
                 {l}
@@ -241,6 +248,7 @@ export default function App() {
           {view === "month" && <MonthView />}
           {view === "week" && <WeekView />}
           {view === "day" && <WeekView singleDay />}
+          {view === "tasks" && <TasksView />}
         </div>
       </main>
 

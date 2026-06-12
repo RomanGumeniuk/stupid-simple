@@ -24,6 +24,9 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
   (stored locally, not synced)
 - 📥 **Backlog** — undated someday-tasks; the 📅 button on any task moves
   it to today, tomorrow, a picked date, or back to the backlog
+- 🗃 **Tasks board** — a dedicated tab (press `B`) with Backlog, Overdue,
+  Today, Tomorrow and Upcoming columns; overdue days offer a one-click
+  "move all to today"; the sidebar is resizable by dragging its edge
 - ✨ **AI quick-add** — type "gym tomorrow 18:00" and AI files it as an
   event or task; works with a free Gemini API key from
   [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
@@ -45,7 +48,7 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
 | --- | --- |
 | `←` / `→` | previous / next day, week or month |
 | `T` | jump to today |
-| `D` / `W` / `M` | day / week / month view |
+| `D` / `W` / `M` / `B` | day / week / month / tasks-board view |
 | `N` | new event |
 | `+` / `-` (or `Ctrl`+scroll) | zoom the hour grid in week/day view |
 | `Esc` | close dialog |

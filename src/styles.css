@@ -496,6 +496,47 @@ label { font-family: var(--font-display); font-weight: 700; font-size: 14px; dis
 }
 .sched-pop input[type="date"] { padding: 5px 8px; font-size: 12.5px; border-width: 2px; }
 
+/* ---------- TASKS BOARD ---------- */
+.tasks-view {
+  flex: 1; min-height: 0;
+  display: flex; gap: 14px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  align-items: flex-start;
+}
+.tcol {
+  width: 280px; min-width: 250px; max-height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  animation: jelly-in 0.3s var(--spring) backwards;
+}
+.tcol h3 {
+  font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.tcol.warn { border-color: var(--mango); background: var(--today-bg); }
+.tcol-body { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
+.tgroup { margin-bottom: 10px; }
+.tgroup-head {
+  border: none; box-shadow: none; background: var(--vanilla-2);
+  border-radius: var(--r-pill); font-size: 12px; padding: 2px 10px;
+  color: var(--ink-soft); margin-bottom: 2px;
+}
+.tgroup-head:hover { background: var(--mango); color: var(--ink); transform: none; }
+.up-add { flex-wrap: wrap; }
+.up-add input[type="date"] { flex: 1 1 100%; }
+
+/* sidebar resize handle */
+.sidebar { position: relative; }
+.sb-resize {
+  position: absolute; top: 0; bottom: 0; right: -6px; width: 12px;
+  cursor: col-resize; z-index: 20;
+}
+.sb-resize:hover { background: rgba(91, 140, 255, 0.18); border-radius: 4px; }
+
 /* AI quick-add */
 .ai-form { display: flex; flex-direction: column; gap: 8px; }
 .ai-form input { padding: 8px 12px; font-size: 13.5px; border-width: 2.5px; }
