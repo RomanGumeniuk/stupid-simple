@@ -22,6 +22,13 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
 - ✅ **Daily tasks** — a checklist per day in the sidebar: add, check off,
   edit inline, delete; the month view shows a done/total badge on each day
   (stored locally, not synced)
+- 📥 **Backlog** — undated someday-tasks; the 📅 button on any task moves
+  it to today, tomorrow, a picked date, or back to the backlog
+- ✨ **AI quick-add** — type "gym tomorrow 18:00" and AI files it as an
+  event or task; works with a free Gemini API key from
+  [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+  (paste it in Settings)
+- 🗂 Sidebar sections collapse and remember their state
 - ⚙️ **Settings** — default view, 12/24-hour clock, **dark mode**, and five
   accent colors
 - 📅 Day / week / month views, a "now" line, candy colors, event editing and

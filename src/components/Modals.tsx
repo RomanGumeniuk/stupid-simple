@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useStore, Accent, ViewMode } from "../lib/store";
 import { GEvent, isBirthday } from "../lib/google";
 import {
@@ -329,8 +330,20 @@ export function SettingsModal() {
           </div>
         </div></div>
 
+        <div className="row"><div>
+          <label htmlFor="st-ai">✨ AI quick-add — Gemini API key</label>
+          <input id="st-ai" type="password" value={settings.aiKey}
+            placeholder="AIza…"
+            spellCheck={false}
+            onChange={(e) => updateSettings({ aiKey: e.target.value.trim() })} />
+          <button className="ghost link" style={{ marginTop: 4 }}
+            onClick={() => void openUrl("https://aistudio.google.com/apikey")}>
+            🔑 Get a free key (aistudio.google.com)
+          </button>
+        </div></div>
+
         <p style={{ fontWeight: 700, fontSize: 13, color: "var(--ink-soft)" }}>
-          Settings and daily tasks are stored on this PC only.
+          Settings, tasks and the AI key are stored on this PC only.
         </p>
 
         <div className="actions">

@@ -19,6 +19,7 @@ import {
   saveCreds,
 } from "./google";
 import { fmtDateInput, setHour12 } from "./notify";
+import { aiParse } from "./ai";
 
 export type ViewMode = "month" | "week" | "day";
 export type Accent = "bubblegum" | "mango" | "mint" | "berry" | "grape";
@@ -42,10 +43,18 @@ export interface Settings {
   accent: Accent;
   /** Height of one hour in the week/day grid, px. */
   zoom: number;
+  /** Collapsed sidebar cards, by card id. */
+  collapsed: Record<string, boolean>;
+  /** Gemini API key for AI quick-add (free at aistudio.google.com/apikey). */
+  aiKey: string;
+  aiModel: string;
 }
 
 export const ZOOM_MIN = 28;
 export const ZOOM_MAX = 104;
+
+/** Todos under this key have no date yet. */
+export const BACKLOG_KEY = "backlog";
 
 const LS_SETTINGS = "ss.settings";
 const LS_TODOS = "ss.todos";
@@ -56,6 +65,9 @@ const DEFAULT_SETTINGS: Settings = {
   dark: false,
   accent: "bubblegum",
   zoom: 52,
+  collapsed: {},
+  aiKey: "",
+  aiModel: "gemini-2.5-flash",
 };
 
 function loadSettings(): Settings {
@@ -106,10 +118,15 @@ interface State {
   updateEvent: (id: string, patch: Partial<GEvent>) => Promise<void>;
   removeEvent: (id: string) => Promise<void>;
   addBirthday: (name: string, month: number, day: number) => Promise<void>;
-  addTodo: (day: Date, text: string) => void;
+  addTodo: (key: string, text: string) => void;
   toggleTodo: (key: string, id: string) => void;
   editTodo: (key: string, id: string, text: string) => void;
   removeTodo: (key: string, id: string) => void;
+  /** Moves a todo between days / the backlog. */
+  moveTodo: (fromKey: string, id: string, toKey: string) => void;
+  toggleCollapsed: (cardId: string) => void;
+  aiAdd: (prompt: string) => Promise<boolean>;
+  aiBusy: boolean;
   updateSettings: (patch: Partial<Settings>) => void;
   setZoom: (px: number) => void;
   openModal: (m: State["modal"]) => void;
@@ -258,9 +275,10 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
-  // --- daily tasks (local-only) ---
-  addTodo: (day, text) => {
-    const key = fmtDateInput(day);
+  aiBusy: false,
+
+  // --- daily tasks + backlog (local-only) ---
+  addTodo: (key, text) => {
     const todo: Todo = { id: crypto.randomUUID(), text, done: false };
     const todos = { ...get().todos, [key]: [...(get().todos[key] ?? []), todo] };
     localStorage.setItem(LS_TODOS, JSON.stringify(todos));
@@ -288,6 +306,82 @@ export const useStore = create<State>((set, get) => ({
     else delete todos[key];
     localStorage.setItem(LS_TODOS, JSON.stringify(todos));
     set({ todos });
+  },
+
+  moveTodo: (fromKey, id, toKey) => {
+    if (fromKey === toKey) return;
+    const todo = (get().todos[fromKey] ?? []).find((t) => t.id === id);
+    if (!todo) return;
+    const fromList = (get().todos[fromKey] ?? []).filter((t) => t.id !== id);
+    const todos = { ...get().todos, [toKey]: [...(get().todos[toKey] ?? []), todo] };
+    if (fromList.length) todos[fromKey] = fromList;
+    else delete todos[fromKey];
+    localStorage.setItem(LS_TODOS, JSON.stringify(todos));
+    set({ todos });
+  },
+
+  toggleCollapsed: (cardId) => {
+    const collapsed = { ...get().settings.collapsed, [cardId]: !get().settings.collapsed[cardId] };
+    get().updateSettings({ collapsed });
+  },
+
+  aiAdd: async (prompt) => {
+    const { aiKey, aiModel } = get().settings;
+    if (!aiKey) {
+      get().toast("err", "Add your (free) Gemini API key in Settings first.");
+      return false;
+    }
+    if (get().aiBusy) return false;
+    set({ aiBusy: true });
+    try {
+      const items = await aiParse(prompt, aiKey, aiModel);
+      let events = 0;
+      let tasks = 0;
+      for (const it of items) {
+        if (it.action === "task") {
+          get().addTodo(it.date ?? BACKLOG_KEY, it.title);
+          tasks++;
+        } else {
+          const date = it.date ?? fmtDateInput(new Date());
+          if (it.startTime) {
+            const start = new Date(`${date}T${it.startTime}:00`);
+            const end = it.endTime
+              ? new Date(`${date}T${it.endTime}:00`)
+              : new Date(start.getTime() + 60 * 60_000);
+            if (end <= start) end.setDate(end.getDate() + 1); // crosses midnight
+            await get().addEvent({
+              summary: it.title,
+              description: it.description,
+              colorId: "9",
+              start: { dateTime: start.toISOString() },
+              end: { dateTime: end.toISOString() },
+            });
+          } else {
+            const endExcl = new Date(`${date}T00:00:00`);
+            endExcl.setDate(endExcl.getDate() + 1);
+            await get().addEvent({
+              summary: it.title,
+              description: it.description,
+              colorId: "9",
+              start: { date },
+              end: { date: fmtDateInput(endExcl) },
+            });
+          }
+          events++;
+        }
+      }
+      const bits = [
+        events ? `${events} event${events > 1 ? "s" : ""}` : "",
+        tasks ? `${tasks} task${tasks > 1 ? "s" : ""}` : "",
+      ].filter(Boolean).join(" + ");
+      get().toast("ok", `✨ Added ${bits}`);
+      return true;
+    } catch (e) {
+      get().toast("err", e instanceof Error ? e.message : "AI quick-add failed");
+      return false;
+    } finally {
+      set({ aiBusy: false });
+    }
   },
 
   updateSettings: (patch) => {

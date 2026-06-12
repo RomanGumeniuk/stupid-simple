@@ -1,6 +1,6 @@
 [package]
 name = "stupid-simple"
-version = "1.4.1"
+version = "1.5.0"
 description = "Stupid Simple — a candy-colored calendar that syncs with Google Calendar"
 authors = ["Roman Gumeniuk"]
 edition = "2021"
