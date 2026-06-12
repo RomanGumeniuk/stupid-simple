@@ -8,6 +8,35 @@ import WeekView from "./components/WeekView";
 import TasksView from "./components/TasksView";
 import { EventModal, BirthdayModal, SettingsModal, DetailsModal } from "./components/Modals";
 
+/** Visible drag strip between the sidebar and the calendar. */
+function SidebarGutter() {
+  const setSidebarWidth = useStore((s) => s.setSidebarWidth);
+  return (
+    <div
+      className="sb-gutter"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize sidebar"
+      title="Drag to resize the sidebar"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        document.body.classList.add("resizing");
+        const move = (ev: MouseEvent) => setSidebarWidth(ev.clientX, false);
+        const up = (ev: MouseEvent) => {
+          setSidebarWidth(ev.clientX, true); // persist once, at the end
+          document.body.classList.remove("resizing");
+          window.removeEventListener("mousemove", move);
+          window.removeEventListener("mouseup", up);
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+      }}
+    >
+      <span className="grip" aria-hidden />
+    </div>
+  );
+}
+
 /** Applies dark mode + accent color to the document root. */
 function useTheme() {
   const settings = useStore((s) => s.settings);
@@ -217,16 +246,19 @@ export default function App() {
   return (
     <div className="app">
       <Sidebar />
+      <SidebarGutter />
       <main className="main">
-        <div className="topbar">
+        <header className="topbar">
           {view !== "tasks" && (
-            <>
-              <button className="icon" aria-label="Back" onClick={() => shift(-1)}>←</button>
-              <button className="icon" aria-label="Forward" onClick={() => shift(1)}>→</button>
+            <div className="nav-cluster">
               <button className="mint" onClick={goToday}>Today</button>
-            </>
+              <div className="nav-arrows" role="group" aria-label="Navigate">
+                <button aria-label="Back" onClick={() => shift(-1)}>‹</button>
+                <button aria-label="Forward" onClick={() => shift(1)}>›</button>
+              </div>
+            </div>
           )}
-          <h2>{title(cursor, view)}</h2>
+          <h2 className="topbar-title">{title(cursor, view)}</h2>
           {(view === "day" || view === "week") && (
             <div className="zoom-ctrl" role="group" aria-label="Grid zoom" title="Zoom the hour grid (Ctrl+scroll or +/-)">
               <button className="icon" aria-label="Zoom out" onClick={() => setZoom(settings.zoom - 8)}>−</button>
@@ -242,7 +274,7 @@ export default function App() {
             ))}
           </div>
           {syncing && <div className="sync-stripe" aria-hidden />}
-        </div>
+        </header>
 
         <div className="view-anim" key={view}>
           {view === "month" && <MonthView />}

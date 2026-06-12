@@ -282,70 +282,133 @@ const ACCENTS: { id: Accent; css: string; name: string }[] = [
   { id: "grape", css: "var(--grape)", name: "Grape" },
 ];
 
+function Segmented<T extends string>({ value, options, onChange, label }: {
+  value: T;
+  options: { id: T; label: string }[];
+  onChange: (v: T) => void;
+  label: string;
+}) {
+  return (
+    <div className="segmented" role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.id}
+          role="radio"
+          aria-checked={value === o.id}
+          className={value === o.id ? "active" : ""}
+          onClick={() => onChange(o.id)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      className={`switch ${on ? "on" : ""}`}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={onToggle}
+    >
+      <span className="knob" aria-hidden />
+    </button>
+  );
+}
+
 export function SettingsModal() {
   const { closeModal, settings, updateSettings } = useStore();
+  const [showKey, setShowKey] = useState(false);
 
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
-      <div className="modal">
+      <div className="modal settings-modal">
         <h2>Settings ⚙️</h2>
 
-        <div className="row">
-          <div>
-            <label htmlFor="st-view">Default view</label>
-            <select id="st-view" value={settings.defaultView}
-              onChange={(e) => updateSettings({ defaultView: e.target.value as ViewMode })}>
-              <option value="day">Day</option>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
-              <option value="tasks">Tasks board</option>
-            </select>
+        <section className="set-group">
+          <h4>Appearance</h4>
+          <div className="set-row">
+            <span className="set-label">🌙 Dark mode</span>
+            <Switch
+              on={settings.dark}
+              label="Dark mode"
+              onToggle={() => updateSettings({ dark: !settings.dark })}
+            />
           </div>
-          <div>
-            <label htmlFor="st-clock">Time format</label>
-            <select id="st-clock" value={settings.hour12 ? "12" : "24"}
-              onChange={(e) => updateSettings({ hour12: e.target.value === "12" })}>
-              <option value="24">24-hour</option>
-              <option value="12">12-hour (AM/PM)</option>
-            </select>
+          <div className="set-row">
+            <span className="set-label">🎨 Accent color</span>
+            <div className="color-dots">
+              {ACCENTS.map((a) => (
+                <button key={a.id} type="button" aria-label={a.name} title={a.name}
+                  className={`cdot ${settings.accent === a.id ? "sel" : ""}`}
+                  style={{ background: a.css }}
+                  onClick={() => updateSettings({ accent: a.id })} />
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div className="row"><div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input type="checkbox" style={{ width: "auto" }} checked={settings.dark}
-              onChange={(e) => updateSettings({ dark: e.target.checked })} />
-            🌙 Dark mode
-          </label>
-        </div></div>
-
-        <div className="row"><div>
-          <label>Accent color</label>
-          <div className="color-dots">
-            {ACCENTS.map((a) => (
-              <button key={a.id} type="button" aria-label={a.name}
-                className={`cdot ${settings.accent === a.id ? "sel" : ""}`}
-                style={{ background: a.css }}
-                onClick={() => updateSettings({ accent: a.id })} />
-            ))}
+        <section className="set-group">
+          <h4>Calendar</h4>
+          <div className="set-row">
+            <span className="set-label">Start view</span>
+            <Segmented
+              label="Default view"
+              value={settings.defaultView}
+              options={[
+                { id: "day" as ViewMode, label: "Day" },
+                { id: "week" as ViewMode, label: "Week" },
+                { id: "month" as ViewMode, label: "Month" },
+                { id: "tasks" as ViewMode, label: "Tasks" },
+              ]}
+              onChange={(defaultView) => updateSettings({ defaultView })}
+            />
           </div>
-        </div></div>
+          <div className="set-row">
+            <span className="set-label">Clock</span>
+            <Segmented
+              label="Time format"
+              value={settings.hour12 ? "12" : "24"}
+              options={[
+                { id: "24", label: "24 h" },
+                { id: "12", label: "AM/PM" },
+              ]}
+              onChange={(v) => updateSettings({ hour12: v === "12" })}
+            />
+          </div>
+        </section>
 
-        <div className="row"><div>
-          <label htmlFor="st-ai">✨ AI quick-add — Gemini API key</label>
-          <input id="st-ai" type="password" value={settings.aiKey}
-            placeholder="AIza…"
-            spellCheck={false}
-            onChange={(e) => updateSettings({ aiKey: e.target.value.trim() })} />
-          <button className="ghost link" style={{ marginTop: 4 }}
+        <section className="set-group">
+          <h4>✨ AI quick-add</h4>
+          <div className="set-row key-row">
+            <input
+              id="st-ai"
+              type={showKey ? "text" : "password"}
+              value={settings.aiKey}
+              placeholder="Gemini API key (AIza…)"
+              spellCheck={false}
+              autoComplete="off"
+              onChange={(e) => updateSettings({ aiKey: e.target.value.trim() })}
+            />
+            <button
+              className="icon ghost"
+              aria-label={showKey ? "Hide key" : "Show key"}
+              title={showKey ? "Hide key" : "Show key"}
+              onClick={() => setShowKey((v) => !v)}
+            >
+              {showKey ? "🙈" : "👁"}
+            </button>
+          </div>
+          <button className="ghost link"
             onClick={() => void openUrl("https://aistudio.google.com/apikey")}>
-            🔑 Get a free key (aistudio.google.com)
+            🔑 Get a free key at aistudio.google.com
           </button>
-        </div></div>
+        </section>
 
-        <p style={{ fontWeight: 700, fontSize: 13, color: "var(--ink-soft)" }}>
-          Settings, tasks and the AI key are stored on this PC only.
-        </p>
+        <p className="set-note">Settings, tasks and the AI key never leave this PC.</p>
 
         <div className="actions">
           <button className="primary" onClick={closeModal}>Done</button>

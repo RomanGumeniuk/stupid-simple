@@ -108,33 +108,6 @@ function BacklogCard() {
   );
 }
 
-/** Drag handle on the sidebar edge — width persists via settings. */
-function ResizeHandle() {
-  const setSidebarWidth = useStore((s) => s.setSidebarWidth);
-  return (
-    <div
-      className="sb-resize"
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Resize sidebar"
-      title="Drag to resize"
-      onMouseDown={(e) => {
-        e.preventDefault();
-        document.body.style.cursor = "col-resize";
-        const move = (ev: MouseEvent) => setSidebarWidth(ev.clientX, false);
-        const up = (ev: MouseEvent) => {
-          setSidebarWidth(ev.clientX, true); // persist once at the end
-          document.body.style.cursor = "";
-          window.removeEventListener("mousemove", move);
-          window.removeEventListener("mouseup", up);
-        };
-        window.addEventListener("mousemove", move);
-        window.addEventListener("mouseup", up);
-      }}
-    />
-  );
-}
-
 export default function Sidebar() {
   const { events, openModal, syncing, lastSync, refresh, logout, settings } = useStore();
 
@@ -156,7 +129,6 @@ export default function Sidebar() {
       className="sidebar"
       style={{ width: settings.sidebarWidth, minWidth: settings.sidebarWidth }}
     >
-      <ResizeHandle />
       <div className="logo">
         <span className="bean" aria-hidden />
         Stupid Simple
