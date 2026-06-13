@@ -862,6 +862,49 @@ body.resizing .sb-gutter { background: var(--mango); }
 .key-setup button.primary { margin-top: 4px; }
 .key-setup button.link { align-self: flex-start; }
 
+/* ---------- MOBILE (phones / Android build) ---------- */
+.hamburger { display: none; }
+.sb-backdrop { display: none; }
+
+@media (max-width: 700px) {
+  .hamburger { display: inline-flex; font-size: 18px; padding: 6px 11px; flex-shrink: 0; }
+  .sb-gutter { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 70;
+    width: min(320px, 86vw) !important;
+    min-width: 0 !important;
+    transform: translateX(-108%);
+    transition: transform 0.25s var(--spring);
+    border-right: 3px solid var(--ink);
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.18);
+  }
+  .app.sb-open .sidebar { transform: none; }
+  .app.sb-open .sb-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(43, 39, 51, 0.45);
+    z-index: 65;
+    animation: fade-in 0.2s ease-out;
+  }
+
+  .topbar { gap: 8px; padding: 0 10px; height: 58px; }
+  .topbar-title { font-size: 16.5px; }
+  .nav-cluster { gap: 6px; }
+  .nav-cluster .mint { padding: 6px 12px; font-size: 13px; }
+  .nav-arrows button { padding: 5px 11px; font-size: 16px; }
+  .zoom-ctrl { display: none; }
+  .view-switch button { padding: 6px 10px; font-size: 12.5px; }
+
+  .weekwrap { padding: 8px 8px 10px; }
+  .month { padding: 8px 8px 10px; gap: 4px; }
+  .tasks-view { padding: 10px; gap: 10px; }
+  .tcol { width: 240px; min-width: 220px; }
+  .modal { padding: 16px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
   .toastmsg { animation: none !important; } /* stays until removed from state */

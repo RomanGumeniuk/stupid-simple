@@ -53,6 +53,20 @@ Built with Tauri 2 + React + TypeScript — the whole app is a few small files.
 | `+` / `-` (or `Ctrl`+scroll) | zoom the hour grid in week/day view |
 | `Esc` | close dialog |
 
+## Install on Android 📱
+
+Stupid Simple also builds as an Android app (same codebase, Tauri 2).
+
+1. Grab the latest `.apk` from **[Releases](../../releases)** (the
+   `arm64`/`universal` one for a normal phone).
+2. Copy it to your phone and open it — Android will ask to allow
+   installing from this source; accept.
+3. Open the app, tap **Connect Google Calendar**, sign in. The sidebar
+   lives behind the **☰** button; day view is the default on phones.
+
+> The phone build is signed with the project's release key, so updates
+> install cleanly over each other.
+
 ## Install (the easy way)
 
 1. Go to **[Releases](../../releases)** and download the latest `.msi`

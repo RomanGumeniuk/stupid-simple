@@ -96,6 +96,9 @@ interface State {
   signedIn: boolean;
   credsReady: boolean;
   connecting: boolean;
+  /** Mobile drawer state (narrow screens only). */
+  sidebarOpen: boolean;
+  toggleSidebar: () => void;
   view: ViewMode;
   cursor: Date; // the day we're looking at
   events: GEvent[];
@@ -156,11 +159,16 @@ function fetchRange(cursor: Date): [Date, Date] {
 const initialSettings = loadSettings();
 setHour12(initialSettings.hour12);
 
+/** Narrow (phone) screens start in day view — week/month don't fit. */
+const isNarrow = typeof window !== "undefined" && window.innerWidth < 700;
+
 export const useStore = create<State>((set, get) => ({
   signedIn: isSignedIn(),
   credsReady: hasCreds(),
   connecting: false,
-  view: initialSettings.defaultView,
+  sidebarOpen: false,
+  toggleSidebar: () => set({ sidebarOpen: !get().sidebarOpen }),
+  view: isNarrow && initialSettings.defaultView !== "tasks" ? "day" : initialSettings.defaultView,
   cursor: new Date(),
   events: [],
   syncing: false,
@@ -203,7 +211,7 @@ export const useStore = create<State>((set, get) => ({
     set({ signedIn: false, events: [] });
   },
 
-  setView: (view) => set({ view }),
+  setView: (view) => set({ view, sidebarOpen: false }),
   setCursor: (cursor) => {
     set({ cursor });
     void get().refresh();
@@ -414,7 +422,8 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
-  openModal: (modal) => set({ modal }),
+  // close the mobile drawer so modals never end up underneath it
+  openModal: (modal) => set({ modal, sidebarOpen: false }),
   closeModal: () => set({ modal: { kind: "none" } }),
 
   toast: (kind, text) => {

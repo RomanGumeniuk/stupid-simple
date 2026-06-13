@@ -7,3 +7,22 @@ src-tauri/gen/schemas
 .claude/
 .DS_Store
 Thumbs.db
+
+# Unrelated sibling project that lives in this folder
+achwatch/
+
+# Android build artifacts (the gen/android project itself IS committed)
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/.idea/
+src-tauri/gen/android/build/
+src-tauri/gen/android/app/build/
+src-tauri/gen/android/app/.cxx/
+src-tauri/gen/android/app/src/main/jniLibs/
+src-tauri/gen/android/local.properties
+src-tauri/gen/android/**/*.iml
+src-tauri/gen/apple/
+
+# Signing — never commit the keystore or its password
+*.keystore
+*.jks
+keystore.properties

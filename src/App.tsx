@@ -195,8 +195,10 @@ function LoginHero() {
 }
 
 export default function App() {
-  const { signedIn, view, setView, cursor, shift, goToday, refresh, events, modal, syncing, settings, setZoom } =
-    useStore();
+  const {
+    signedIn, view, setView, cursor, shift, goToday, refresh, events, modal,
+    syncing, settings, setZoom, sidebarOpen, toggleSidebar,
+  } = useStore();
   useTheme();
 
   useEffect(() => {
@@ -244,11 +246,19 @@ export default function App() {
   if (!signedIn) return <LoginHero />;
 
   return (
-    <div className="app">
+    <div className={`app ${sidebarOpen ? "sb-open" : ""}`}>
       <Sidebar />
+      <div className="sb-backdrop" onClick={toggleSidebar} aria-hidden />
       <SidebarGutter />
       <main className="main">
         <header className="topbar">
+          <button
+            className="icon hamburger"
+            aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+            onClick={toggleSidebar}
+          >
+            ☰
+          </button>
           {view !== "tasks" && (
             <div className="nav-cluster">
               <button className="mint" onClick={goToday}>Today</button>
