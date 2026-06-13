@@ -60,10 +60,13 @@ jobs:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           if [ -n "$KS" ]; then
-            echo "$KS" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            # -i ignores any whitespace/newlines GitHub may add to the secret
+            printf '%s' "$KS" | base64 -d -i > "$RUNNER_TEMP/release.keystore"
             echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "Keystore decoded ($(stat -c%s "$RUNNER_TEMP/release.keystore") bytes)"
           else
             echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "No keystore secret — building an unsigned APK."
           fi
 
       - name: Build APK
