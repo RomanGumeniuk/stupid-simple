@@ -27,19 +27,28 @@ export interface Creds {
 }
 
 export function getCreds(): Creds | null {
+  // Always trim — keys baked in at build time (or pasted) can carry a stray
+  // newline/space, which makes Google reject them with "OAuth client was not
+  // found" (invalid_client).
+  const clean = (c: Creds): Creds | null => {
+    const clientId = c.clientId?.trim();
+    const clientSecret = c.clientSecret?.trim();
+    return clientId && clientSecret ? { clientId, clientSecret } : null;
+  };
+
   const raw = localStorage.getItem(LS_CREDS);
   if (raw) {
     try {
-      const c = JSON.parse(raw) as Creds;
-      if (c.clientId && c.clientSecret) return c;
+      const c = clean(JSON.parse(raw) as Creds);
+      if (c) return c;
     } catch {
       /* corrupted — fall through to env */
     }
   }
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-  const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET as string | undefined;
-  if (clientId && clientSecret) return { clientId, clientSecret };
-  return null;
+  return clean({
+    clientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ?? "",
+    clientSecret: (import.meta.env.VITE_GOOGLE_CLIENT_SECRET as string) ?? "",
+  });
 }
 
 export function saveCreds(c: Creds): void {
